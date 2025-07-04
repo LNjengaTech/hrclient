@@ -22,7 +22,12 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
     });
     const [hotelMessage, setHotelMessage] = useState(''); // Message for hotel add/edit/delete operations
 
-    const API_BASE_URL = 'http://localhost:5000';
+    // State for custom confirmation modal
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [hotelToDeleteId, setHotelToDeleteId] = useState(null);
+
+    // --- IMPORTANT: Update API_BASE_URL to your Render backend URL ---
+    const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com'; // Corrected API Base URL
 
     // --- Fetch Analytics and Hotels ---
     const fetchAdminData = useCallback(async () => {
@@ -83,11 +88,11 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
         } finally {
             setIsLoadingAnalytics(false);
         }
-    }, [onHotelsUpdated]);
+    }, [API_BASE_URL]); // Added API_BASE_URL to useCallback dependencies
 
     useEffect(() => {
         fetchAdminData();
-    }, [fetchAdminData]);
+    }, [fetchAdminData]); // fetchAdminData is now a dependency as it's wrapped in useCallback
 
 
     // --- Hotel Management Handlers ---
@@ -128,6 +133,11 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
         setHotelMessage('');
 
         const storedUser = localStorage.getItem('dummyUser');
+        // Defensive check for storedUser
+        if (!storedUser) {
+            setHotelMessage('Authentication token missing. Please log in again.');
+            return;
+        }
         const { token } = JSON.parse(storedUser);
 
         if (!token) {
@@ -164,8 +174,8 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
             }
 
             setHotelMessage(data.message);
-            onHotelsUpdated();
-            await fetchAdminData();
+            onHotelsUpdated(); // Trigger App.jsx to re-fetch hotels for the main page
+            await fetchAdminData(); // Re-fetch all admin data to update tables/charts
             closeHotelModal();
 
         } catch (err) {
@@ -174,13 +184,23 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
         }
     };
 
-    const handleDeleteHotel = async (hotelId) => {
-        if (!window.confirm('Are you sure you want to delete this hotel and all its reviews?')) {
-            return;
-        }
+    // Trigger confirmation modal for delete
+    const confirmDeleteHotel = (hotelId) => {
+        setHotelToDeleteId(hotelId);
+        setShowConfirmModal(true);
+    };
+
+    const handleDeleteHotel = async () => {
+        setShowConfirmModal(false); // Close modal immediately
+        if (!hotelToDeleteId) return; // Should not happen if triggered correctly
 
         setHotelMessage('');
         const storedUser = localStorage.getItem('dummyUser');
+        // Defensive check for storedUser
+        if (!storedUser) {
+            setHotelMessage('Authentication token missing. Please log in again.');
+            return;
+        }
         const { token } = JSON.parse(storedUser);
 
         if (!token) {
@@ -189,7 +209,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelToDeleteId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -203,8 +223,9 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
             }
 
             setHotelMessage(data.message);
-            onHotelsUpdated();
-            await fetchAdminData();
+            onHotelsUpdated(); // Trigger App.jsx to re-fetch hotels for the main page
+            await fetchAdminData(); // Re-fetch all admin data to update tables/charts
+            setHotelToDeleteId(null); // Clear the ID after successful deletion
 
         } catch (err) {
             console.error('Hotel deletion error:', err);
@@ -320,7 +341,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteHotel(hotel._id)}
+                                                    onClick={() => confirmDeleteHotel(hotel._id)} // Changed to use custom confirm
                                                     className="bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-1 px-3 rounded-full transition-colors duration-200"
                                                 >
                                                     Delete
@@ -508,6 +529,30 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated }) => {
                                 {currentHotel ? 'Update Hotel' : 'Add Hotel'}
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Confirmation Modal for Delete */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm text-center relative">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Deletion</h3>
+                        <p className="text-gray-600 mb-6">Are you sure you want to delete this hotel and all its reviews? This action cannot be undone.</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-full transition-colors duration-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteHotel}
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200"
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
