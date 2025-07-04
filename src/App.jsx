@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './Components/Navbar.jsx';
-import HomePage from './pages/HomePage.jsx';
+import HomePage from './pages/Homepage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 // Importing pages for routing
 
