@@ -1,61 +1,61 @@
-import React, { useState } from 'react';
-import HotelCard from '../Components/HotelCard.jsx';
-import Hero from '../Components/Hero.jsx';
+import React from 'react';
+import HotelCard from '../components/HotelCard.jsx'; // Assuming this path is correct
 
 const HomePage = ({ hotels, onReviewClick, onViewReviewsClick, isLoading, error }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const filteredHotels = hotels.filter(hotel =>
-        hotel.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     if (isLoading) {
         return (
-            <main className="container mx-auto px-4 py-8 text-center">
-                <p className="text-xl text-gray-700">Loading hotels and restaurants...</p>
-                <div className="mt-4 animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            </main>
+            <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-center">
+                    <p className="text-xl text-gray-700">Loading hotels and restaurants...</p>
+                    <div className="mt-4 animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                </div>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <main className="container mx-auto px-4 py-8 text-center">
-                <p className="text-xl text-red-600">Error loading data: {error}</p>
-                <p className="text-gray-600">Please ensure your backend server is running at http://localhost:5000.</p>
-            </main>
+            <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-center">
+                    <h2 className="text-4xl font-extrabold text-red-700 mb-4">Error Loading Data</h2>
+                    <p className="text-xl text-red-600 mb-6">Failed to fetch hotels: {error}</p>
+                    <p className="text-gray-600 mb-8">
+                        Please ensure your backend server is running and accessible from this domain.
+                    </p>
+                </div>
+            </div>
         );
     }
 
+    // Defensive check: Ensure hotels is an array before attempting to use it
+    const hotelsToRender = Array.isArray(hotels) ? hotels : [];
+
     return (
-        <main className="container mx-auto px-4 py-8">
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">
-                Hotels & Restaurants in Mombasa
+        <div className="container mx-auto p-4 py-8">
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">
+                Discover Hotels & Restaurants
             </h1>
-            <div className="mb-8 flex justify-center">
-                <input
-                    type="text"
-                    placeholder="Search hotels by name..."
-                    className="w-full max-w-md p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredHotels.length > 0 ? (
-                    filteredHotels.map((hotel) => (
+
+            {hotelsToRender.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {hotelsToRender.map(hotel => (
                         <HotelCard
-                            key={hotel._id} // Use _id from MongoDB
+                            key={hotel._id}
                             hotel={hotel}
                             onReviewClick={onReviewClick}
                             onViewReviewsClick={onViewReviewsClick}
                         />
-                    ))
-                ) : (
-                    <p className="col-span-full text-center text-gray-600 text-lg">No hotels or restaurants found matching your search.</p>
-                )}
-            </div>
-        </main>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+                    <p className="text-center text-gray-600 text-lg mb-4">No hotels or restaurants available yet.</p>
+                    <p className="text-center text-gray-500 text-md">
+                        The admin might not have added any entries, or there might be a temporary issue.
+                    </p>
+                </div>
+            )}
+        </div>
     );
 };
 

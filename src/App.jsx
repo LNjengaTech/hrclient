@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './Components/Navbar.jsx';
-import HomePage from './pages/Homepage.jsx'; // Confirmed: './pages/HomePage.jsx'
-import AuthPage from './pages/AuthPage.jsx';     // Confirmed: './pages/AuthPage.jsx'
-import AdminDashboard from './pages/AdminDashboard.jsx'; // Confirmed: './pages/AdminDashboard.jsx'
-import UserAccount from './pages/UserAccount.jsx';   // Confirmed: './pages/UserAccount.jsx'
-import ReviewForm from './pages/ReviewForm.jsx';     // Confirmed: './pages/ReviewForm.jsx'
-import HotelReviews from './pages/HotelReviews.jsx'; // Confirmed: './pages/HotelReviews.jsx'
+import HomePage from './pages/Homepage.jsx';
+import AuthPage from './pages/AuthPage.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import UserAccount from './pages/UserAccount.jsx';
+import ReviewForm from './pages/ReviewForm.jsx';
+import HotelReviews from './pages/HotelReviews.jsx';
 
 // Main App component
 const App = () => {
@@ -18,10 +18,10 @@ const App = () => {
 
     const [hotels, setHotels] = useState([]); // Initialize as empty array, data will be fetched
     const [isLoading, setIsLoading] = useState(true); // Loading state for hotels
-    const [error, setError] = null; // Error state for hotels fetch
+    const [error, setError] = useState(null); // Error state for hotels fetch
 
     // Base URL for backend API - *** IMPORTANT: REPLACE THIS WITH YOUR RENDER BACKEND URL ***
-    const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com'; 
+    const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com';
 
     // Function to fetch hotels from backend
     const fetchHotels = useCallback(async () => { // Wrapped in useCallback
@@ -37,12 +37,13 @@ const App = () => {
         } catch (err) {
             console.error("Failed to fetch hotels:", err);
             setError(err.message);
+            setHotels([]); // Ensure hotels is an empty array on error
         } finally {
             setIsLoading(false);
         }
     }, [API_BASE_URL]); // Dependency for useCallback
 
-    // Effect to fetch hotels and check login status on component mount or when refreshHotelsTrigger changes
+    // Effect to fetch hotels and check login status on component mount
     useEffect(() => {
         fetchHotels(); // Initial fetch of hotels
 
@@ -62,7 +63,7 @@ const App = () => {
                 setIsAdmin(false);
             }
         }
-    }, [fetchHotels]); // Depend on fetchHotels
+    }, [fetchHotels]); // Removed refreshHotelsTrigger from dependencies
 
     // Function to handle login success from AuthPage
     const handleLoginSuccess = (userData) => {
