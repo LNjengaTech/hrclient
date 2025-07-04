@@ -51,10 +51,11 @@ const App = () => {
         const storedUser = localStorage.getItem('dummyUser'); // This now stores token and user details
         if (storedUser) {
             try {
-                const userData = JSON.parse(storedUser);
+                // FIX: Correctly parse the stored user data which now includes 'token' and 'user' nested
+                const { token, user } = JSON.parse(storedUser);
                 setIsLoggedIn(true);
-                setUsername(userData.username);
-                setIsAdmin(userData.isAdmin || false);
+                setUsername(user.username); // Access username from nested user object
+                setIsAdmin(user.isAdmin || false); // Access isAdmin from nested user object
             } catch (e) {
                 console.error("Failed to parse user data from localStorage:", e);
                 localStorage.removeItem('dummyUser'); // Clear invalid data
@@ -63,15 +64,17 @@ const App = () => {
                 setIsAdmin(false);
             }
         }
-    }, [fetchHotels]); // Removed refreshHotelsTrigger from dependencies
+    }, [fetchHotels]);
 
     // Function to handle login success from AuthPage
-    const handleLoginSuccess = (userData) => {
-        // userData now includes token, id, username, email, isAdmin from backend
-        localStorage.setItem('dummyUser', JSON.stringify(userData)); // Store all user data including token
+    // FIX: Expects the full 'data' object from AuthPage, which contains 'token' and 'user'
+    const handleLoginSuccess = (loginData) => {
+        // loginData is now { token: "...", user: { id, username, email, isAdmin } }
+        localStorage.setItem('dummyUser', JSON.stringify(loginData)); // Store the entire object
+
         setIsLoggedIn(true);
-        setUsername(userData.username);
-        setIsAdmin(userData.isAdmin);
+        setUsername(loginData.user.username); // Access username from nested user object
+        setIsAdmin(loginData.user.isAdmin);   // Access isAdmin from nested user object
         setCurrentPage('home'); // Redirect to home after login
         console.log("User logged in (real backend auth).");
     };
@@ -213,6 +216,7 @@ const App = () => {
                         onLogout={handleLogout}
                         onGoBack={handleGoBack}
                         onHotelsUpdated={handleHotelsUpdated} // Pass the refresh callback
+                        API_BASE_URL={API_BASE_URL} // Pass API_BASE_URL to AdminDashboard
                     />
                 );
             case 'user-account':
