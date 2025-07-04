@@ -1,5 +1,5 @@
 import React from 'react';
-import HotelCard from '../components/HotelCard.jsx'; // Assuming this path is correct
+import HotelCard from '../Components/HotelCard.jsx'; // Assuming this path is correct
 
 const HomePage = ({ hotels, onReviewClick, onViewReviewsClick, isLoading, error }) => {
     if (isLoading) {
