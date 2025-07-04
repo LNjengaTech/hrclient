@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Navbar from './Components/Navbar.jsx';
-import HomePage from './pages/Homepage.jsx';
-import AuthPage from './pages/AuthPage.jsx';
-// Importing pages for routing
-
-import AdminDashboard from './pages/AdminDashboard.jsx';
-import UserAccount from './pages/UserAccount.jsx';
-import ReviewForm from './pages/ReviewForm.jsx';
-import HotelReviews from './pages/HotelReviews.jsx';
+import Navbar from './components/Navbar.jsx';
+import HomePage from './pages/HomePage.jsx'; // Confirmed: './pages/HomePage.jsx'
+import AuthPage from './pages/AuthPage.jsx';     // Confirmed: './pages/AuthPage.jsx'
+import AdminDashboard from './pages/AdminDashboard.jsx'; // Confirmed: './pages/AdminDashboard.jsx'
+import UserAccount from './pages/UserAccount.jsx';   // Confirmed: './pages/UserAccount.jsx'
+import ReviewForm from './pages/ReviewForm.jsx';     // Confirmed: './pages/ReviewForm.jsx'
+import HotelReviews from './pages/HotelReviews.jsx'; // Confirmed: './pages/HotelReviews.jsx'
 
 // Main App component
 const App = () => {
@@ -20,8 +18,7 @@ const App = () => {
 
     const [hotels, setHotels] = useState([]); // Initialize as empty array, data will be fetched
     const [isLoading, setIsLoading] = useState(true); // Loading state for hotels
-    const [error, setError] = useState(null); // Error state for hotels fetch
-    const [refreshHotelsTrigger, setRefreshHotelsTrigger] = useState(0); // State to trigger hotels fetch
+    const [error, setError] = null; // Error state for hotels fetch
 
     // Base URL for backend API - *** IMPORTANT: REPLACE THIS WITH YOUR RENDER BACKEND URL ***
     const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com'; 
@@ -65,7 +62,7 @@ const App = () => {
                 setIsAdmin(false);
             }
         }
-    }, [refreshHotelsTrigger, fetchHotels]); // Depend on refreshHotelsTrigger and fetchHotels
+    }, [fetchHotels]); // Depend on fetchHotels
 
     // Function to handle login success from AuthPage
     const handleLoginSuccess = (userData) => {
@@ -181,7 +178,8 @@ const App = () => {
 
     // Callback to trigger a refresh of hotels list in App.jsx
     const handleHotelsUpdated = () => {
-        setRefreshHotelsTrigger(prev => prev + 1); // Increment to trigger useEffect
+        // This will trigger a re-fetch of hotels
+        fetchHotels();
     };
 
     // Dummy search functionality (for now, just logs the search term)
