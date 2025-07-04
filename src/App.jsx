@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './Components/Navbar.jsx';
 import HomePage from './pages/Homepage.jsx';
-import AuthPage from './pages/Authpage.jsx';
+import AuthPage from './pages/AuthPage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import UserAccount from './pages/UserAccount.jsx';
 import ReviewForm from './pages/ReviewForm.jsx';
