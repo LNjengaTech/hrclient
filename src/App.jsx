@@ -53,9 +53,19 @@ const App = () => {
             try {
                 // FIX: Correctly parse the stored user data which now includes 'token' and 'user' nested
                 const { token, user } = JSON.parse(storedUser);
-                setIsLoggedIn(true);
-                setUsername(user.username); // Access username from nested user object
-                setIsAdmin(user.isAdmin || false); // Access isAdmin from nested user object
+                // Ensure 'user' is not null/undefined before accessing its properties
+                if (user && user.username) {
+                    setIsLoggedIn(true);
+                    setUsername(user.username); // Access username from nested user object
+                    setIsAdmin(user.isAdmin || false); // Access isAdmin from nested user object
+                } else {
+                    // If user data is malformed, clear it
+                    console.error("Stored user data is incomplete or malformed.");
+                    localStorage.removeItem('dummyUser');
+                    setIsLoggedIn(false);
+                    setUsername('');
+                    setIsAdmin(false);
+                }
             } catch (e) {
                 console.error("Failed to parse user data from localStorage:", e);
                 localStorage.removeItem('dummyUser'); // Clear invalid data
@@ -72,11 +82,20 @@ const App = () => {
         // loginData is now { token: "...", user: { id, username, email, isAdmin } }
         localStorage.setItem('dummyUser', JSON.stringify(loginData)); // Store the entire object
 
-        setIsLoggedIn(true);
-        setUsername(loginData.user.username); // Access username from nested user object
-        setIsAdmin(loginData.user.isAdmin);   // Access isAdmin from nested user object
-        setCurrentPage('home'); // Redirect to home after login
-        console.log("User logged in (real backend auth).");
+        // Ensure loginData.user exists before accessing properties
+        if (loginData && loginData.user) {
+            setIsLoggedIn(true);
+            setUsername(loginData.user.username); // Access username from nested user object
+            setIsAdmin(loginData.user.isAdmin);   // Access isAdmin from nested user object
+            setCurrentPage('home'); // Redirect to home after login
+            console.log("User logged in (real backend auth).");
+        } else {
+            console.error("Login data from AuthPage is missing 'user' object:", loginData);
+            alert("Login failed due to incomplete user data. Please try again.");
+            setIsLoggedIn(false);
+            setUsername('');
+            setIsAdmin(false);
+        }
     };
 
     // Function to handle logout

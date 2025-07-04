@@ -1,61 +1,76 @@
 import React, { useState } from 'react';
 
-const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => { // Added API_BASE_URL prop
+// AuthPage component
+// It now takes API_BASE_URL as a prop to know where to send requests
+const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState(''); // Only for register
     const [message, setMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // Loading state
+    const [isLoading, setIsLoading] = useState(false); // New loading state
 
-    const handleSubmit = async (e) => { // Made async
+    const handleSubmit = async (e) => { // Made handleSubmit async
         e.preventDefault();
         setMessage(''); // Clear previous messages
-        setIsLoading(true); // Set loading state
+        setIsLoading(true); // Set loading to true
 
-        try {
-            let url;
-            let body;
+        if (isLoginMode) {
+            // --- REAL LOGIN API CALL ---
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
 
-            if (isLoginMode) {
-                url = `${API_BASE_URL}/api/auth/login`;
-                body = JSON.stringify({ email, password });
-            } else {
-                url = `${API_BASE_URL}/api/auth/register`;
-                body = JSON.stringify({ username, email, password });
+                const data = await response.json();
+
+                if (response.ok) { // Check if response status is 2xx
+                    setMessage('Login successful!');
+                    // *** CRITICAL LINE: Ensure the entire 'data' object is passed to onLoginSuccess ***
+                    // 'data' should contain { token: "...", user: { id, username, email, isAdmin } }
+                    onLoginSuccess(data); // Pass the full data object
+                } else {
+                    // Handle errors from backend (e.g., invalid credentials)
+                    setMessage(`Login failed: ${data.message || 'Server error'}`);
+                }
+            } catch (error) {
+                console.error("Login API call failed:", error);
+                setMessage(`Login failed: Network error or server unreachable.`);
+            } finally {
+                setIsLoading(false); // Set loading to false
             }
+        } else {
+            // --- REAL REGISTER API CALL ---
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password }),
+                });
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: body,
-            });
+                const data = await response.json();
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'An error occurred.');
+                if (response.ok) {
+                    setMessage(`Registration successful for ${username}! Please log in.`);
+                    setIsLoginMode(true); // Switch to login mode after successful registration
+                    setEmail(''); // Clear form fields
+                    setPassword('');
+                    setUsername('');
+                } else {
+                    setMessage(`Registration failed: ${data.message || 'Server error'}`);
+                }
+            } catch (error) {
+                console.error("Register API call failed:", error);
+                setMessage(`Registration failed: Network error or server unreachable.`);
+            } finally {
+                setIsLoading(false); // Set loading to false
             }
-
-            if (isLoginMode) {
-                setMessage('Login successful!');
-                // Pass the full user data and token from the backend response
-                onLoginSuccess(data.user); // data.user contains id, username, email, isAdmin
-                // The token is also in data.token, which App.jsx will store in localStorage via onLoginSuccess
-            } else {
-                setMessage(`Registration successful for ${username}! Please log in.`);
-                setIsLoginMode(true); // Switch to login mode after successful registration
-                setEmail('');
-                setPassword('');
-                setUsername('');
-            }
-        } catch (err) {
-            console.error("Auth error:", err);
-            setMessage(`${isLoginMode ? 'Login' : 'Registration'} failed: ${err.message}.`);
-        } finally {
-            setIsLoading(false); // Clear loading state
         }
     };
 
@@ -84,6 +99,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => { // Added API_
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required={!isLoginMode}
+                                disabled={isLoading} // Disable input during loading
                             />
                         </div>
                     )}
@@ -99,6 +115,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => { // Added API_
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
+                            disabled={isLoading} // Disable input during loading
                         />
                     </div>
                     <div>
@@ -113,14 +130,15 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => { // Added API_
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            disabled={isLoading} // Disable input during loading
                         />
                     </div>
                     <button
                         type="submit"
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300 transform hover:scale-105"
-                        disabled={isLoading} // Disable button while loading
+                        disabled={isLoading} // Disable button during loading
                     >
-                        {isLoading ? (isLoginMode ? 'Logging In...' : 'Registering...') : (isLoginMode ? 'Login' : 'Register')}
+                        {isLoading ? 'Loading...' : (isLoginMode ? 'Login' : 'Register')}
                     </button>
                 </form>
                 <div className="mt-6 text-center">
@@ -135,6 +153,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => { // Added API_
                                 setUsername('');
                             }}
                             className="text-blue-500 hover:text-blue-700 font-semibold focus:outline-none"
+                            disabled={isLoading} // Disable button during loading
                         >
                             {isLoginMode ? 'Register here' : 'Login here'}
                         </button>
@@ -142,6 +161,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => { // Added API_
                     <button
                         onClick={onGoBack}
                         className="mt-4 text-gray-500 hover:text-gray-700 text-sm focus:outline-none"
+                        disabled={isLoading} // Disable button during loading
                     >
                         &larr; Go back
                     </button>
