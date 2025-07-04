@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Navbar from './Components/Navbar.jsx';
-import HomePage from './pages/Homepage.jsx';
+import Navbar from './components/Navbar.jsx';
+import HomePage from './pages/HomePage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import UserAccount from './pages/UserAccount.jsx';
@@ -52,7 +52,9 @@ const App = () => {
         if (storedUser) {
             try {
                 // FIX: Correctly parse the stored user data which now includes 'token' and 'user' nested
-                const { token, user } = JSON.parse(storedUser);
+                const parsedData = JSON.parse(storedUser);
+                const { token, user } = parsedData; // Destructure token and user from parsedData
+
                 // Ensure 'user' is not null/undefined before accessing its properties
                 if (user && user.username) {
                     setIsLoggedIn(true);
@@ -60,7 +62,7 @@ const App = () => {
                     setIsAdmin(user.isAdmin || false); // Access isAdmin from nested user object
                 } else {
                     // If user data is malformed, clear it
-                    console.error("Stored user data is incomplete or malformed.");
+                    console.error("Stored user data is incomplete or malformed (missing user object or username).", parsedData);
                     localStorage.removeItem('dummyUser');
                     setIsLoggedIn(false);
                     setUsername('');
@@ -79,7 +81,7 @@ const App = () => {
     // Function to handle login success from AuthPage
     // FIX: Expects the full 'data' object from AuthPage, which contains 'token' and 'user'
     const handleLoginSuccess = (loginData) => {
-        // loginData is now { token: "...", user: { id, username, email, isAdmin } }
+        // loginData is now { message: "...", token: "...", user: { id, username, email, isAdmin } }
         localStorage.setItem('dummyUser', JSON.stringify(loginData)); // Store the entire object
 
         // Ensure loginData.user exists before accessing properties

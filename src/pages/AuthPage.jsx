@@ -30,8 +30,8 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
 
                 if (response.ok) { // Check if response status is 2xx
                     setMessage('Login successful!');
-                    // *** CRITICAL LINE: Ensure the entire 'data' object is passed to onLoginSuccess ***
-                    // 'data' should contain { token: "...", user: { id, username, email, isAdmin } }
+                    // *** CRITICAL LINE: Pass the entire 'data' object which contains 'token' and 'user' ***
+                    // 'data' should be { message: "...", token: "...", user: { id, username, email, isAdmin } }
                     onLoginSuccess(data); // Pass the full data object
                 } else {
                     // Handle errors from backend (e.g., invalid credentials)
@@ -107,16 +107,16 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
                             Email
                         </label>
-                        <input
-                            type="email"
-                            id="email"
-                            className="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500"
-                            placeholder="your@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            disabled={isLoading} // Disable input during loading
-                        />
+                            <input
+                                type="email"
+                                id="email"
+                                className="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500"
+                                placeholder="your@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                disabled={isLoading} // Disable input during loading
+                            />
                     </div>
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
