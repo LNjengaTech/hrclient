@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Navbar from './components/Navbar.jsx';
+import Navbar from './Components/Navbar.jsx';
 import HomePage from './pages/HomePage.jsx'; // Confirmed: './pages/HomePage.jsx'
 import AuthPage from './pages/AuthPage.jsx';     // Confirmed: './pages/AuthPage.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'; // Confirmed: './pages/AdminDashboard.jsx'
