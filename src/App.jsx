@@ -158,13 +158,17 @@ const App = () => {
 
     // Function to handle review submission (sends to backend)
     const handleSubmitReview = async (reviewData) => {
+        console.log("App.jsx: handleSubmitReview received reviewData:", reviewData); // Debug log
+
         const storedUser = localStorage.getItem('dummyUser');
         if (!storedUser) {
-            console.error("No user data found for review submission.");
+            console.error("App.jsx: No user data found for review submission.");
             alert("You must be logged in to submit a review.");
             return false;
         }
-        const { token } = JSON.parse(storedUser);
+        const { token, user } = JSON.parse(storedUser);
+        console.log("App.jsx: Parsed token for review submission:", token ? "Exists" : "Does NOT exist"); // Debug log
+        console.log("App.jsx: Parsed user for review submission:", user); // Debug log
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/reviews`, {
@@ -176,18 +180,27 @@ const App = () => {
                 body: JSON.stringify(reviewData)
             });
 
-            const data = await response.json();
+            // Check if the response is JSON before parsing
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const data = await response.json();
+                console.log("App.jsx: Review submission response data:", data); // Debug log
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to submit review');
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to submit review');
+                }
+
+                console.log("Review submitted successfully:", data.review);
+                alert("Review submitted successfully! Thank you for your feedback.");
+                setCurrentPage('home');
+                return true;
+            } else {
+                const text = await response.text();
+                console.error("App.jsx: Server did not return JSON. Response text:", text); // Debug log
+                throw new Error(`Server did not return JSON. Response: ${text.substring(0, 100)}...`);
             }
-
-            console.log("Review submitted successfully:", data.review);
-            alert("Review submitted successfully! Thank you for your feedback.");
-            setCurrentPage('home');
-            return true;
         } catch (err) {
-            console.error("Error submitting review:", err);
+            console.error("App.jsx: Error submitting review:", err);
             alert(`Error submitting review: ${err.message}. Please try again.`);
             return false;
         }
