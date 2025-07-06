@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Navbar from './Components/Navbar.jsx';
-import HomePage from './pages/Homepage.jsx';
+import Navbar from './components/Navbar.jsx';
+import HomePage from './pages/HomePage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import UserAccount from './pages/UserAccount.jsx';
@@ -37,8 +37,7 @@ const App = () => {
         // Automatically hide toast after 3 seconds
         const timer = setTimeout(() => {
             setShowToast(false);
-            setToastMessage('');
-            setToastType('success'); // Reset to default
+            // We don't clear message/type immediately to allow animation to play out
         }, 3000);
 
         return () => clearTimeout(timer); // Cleanup timer if component unmounts or toast changes
@@ -329,13 +328,12 @@ const App = () => {
             {renderPage()}
 
             {/* Toast Notification */}
-            {showToast && (
-                <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transition-transform transform ${
-                    toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
-                } translate-y-0 opacity-100`}>
-                    {toastMessage}
-                </div>
-            )}
+            <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transition-all duration-500 ease-out
+                ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}
+                ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-[-100%] opacity-0'}`}
+            >
+                {toastMessage}
+            </div>
         </div>
     );
 };
