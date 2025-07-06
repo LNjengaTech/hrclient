@@ -1,121 +1,148 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
-// HotelReviews component
 const HotelReviews = ({ hotel, onGoBack }) => {
     const [reviews, setReviews] = useState([]);
-    const [isLoadingReviews, setIsLoadingReviews] = useState(true);
-    const [reviewsError, setReviewsError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Base URL for backend API - IMPORTANT: Keep this in sync with App.jsx
+    const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com';
+
+    const fetchReviews = useCallback(async () => {
+        console.log("HotelReviews: fetchReviews called."); // Debug log
+        if (!hotel || !hotel._id) {
+            console.error("HotelReviews: Hotel information missing (hotel or hotel._id is undefined). Hotel prop:", hotel); // Debug log
+            setError("Hotel information missing to fetch reviews.");
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        const reviewFetchUrl = `${API_BASE_URL}/api/reviews/hotel/${hotel._id}`;
+        console.log("HotelReviews: Attempting to fetch reviews from URL:", reviewFetchUrl); // Debug log
+
+        try {
+            const response = await fetch(reviewFetchUrl);
+            console.log("HotelReviews: Fetch response status:", response.status); // Debug log
+
+            // Check if the response is JSON before parsing
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const data = await response.json();
+                console.log("HotelReviews: Fetched reviews data:", data); // Debug log
+
+                if (!response.ok) {
+                    console.error("HotelReviews: Fetch failed with data:", data); // Debug log
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                setReviews(data);
+            } else {
+                const text = await response.text();
+                console.error("HotelReviews: Server did not return JSON. Response text:", text); // Debug log
+                throw new Error(`Server did not return JSON. Response: ${text.substring(0, 100)}...`);
+            }
+        } catch (err) {
+            console.error("HotelReviews: Error fetching reviews:", err); // Debug log
+            setError(`Failed to load reviews: ${err.message}`);
+            setReviews([]);
+        } finally {
+            setIsLoading(false);
+            console.log("HotelReviews: Fetch process completed."); // Debug log
+        }
+    }, [hotel, API_BASE_URL]); // Dependencies for useCallback
 
     useEffect(() => {
-        const fetchReviews = async () => {
-            if (!hotel || !hotel._id) {
-                setReviewsError('No hotel selected to fetch reviews.');
-                setIsLoadingReviews(false);
-                return;
-            }
-
-            try {
-                setIsLoadingReviews(true);
-                setReviewsError(null);
-                const response = await fetch(`http://localhost:5000/api/reviews/${hotel._id}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                setReviews(data);
-            } catch (err) {
-                console.error("Failed to fetch reviews:", err);
-                setReviewsError(err.message);
-            } finally {
-                setIsLoadingReviews(false);
-            }
-        };
-
+        console.log("HotelReviews useEffect: Calling fetchReviews."); // Debug log
         fetchReviews();
-    }, [hotel]); // Re-fetch reviews if the hotel changes
+    }, [fetchReviews]); // Run when fetchReviews changes
 
     if (!hotel) {
         return (
-            <div className="min-h-[calc(100vh-6rem)] bg-gray-100 p-4 flex items-center justify-center">
-                <p className="text-xl text-gray-700">No hotel selected. Please go back and choose a hotel.</p>
-                <button
-                    onClick={onGoBack}
-                    className="mt-4 text-gray-500 hover:text-gray-700 text-sm focus:outline-none"
-                >
-                    &larr; Go back
-                </button>
+            <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-red-700 mb-4">Error: Hotel Not Selected</h2>
+                    <p className="text-gray-700 mb-6">
+                        No hotel was selected to view reviews. Please go back to the home page.
+                    </p>
+                    <button
+                        onClick={onGoBack}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300"
+                    >
+                        &larr; Go back
+                    </button>
+                </div>
             </div>
         );
     }
 
-    if (isLoadingReviews) {
+    if (isLoading) {
         return (
-            <div className="min-h-[calc(100vh-6rem)] bg-gray-100 p-4 text-center flex flex-col items-center justify-center">
-                <p className="text-xl text-gray-700">Loading reviews for {hotel.name}...</p>
-                <div className="mt-4 animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+            <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-center">
+                    <p className="text-xl text-gray-700">Loading reviews for {hotel.name}...</p>
+                    <div className="mt-4 animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                </div>
             </div>
         );
     }
 
-    if (reviewsError) {
+    if (error) {
         return (
-            <div className="min-h-[calc(100vh-6rem)] bg-gray-100 p-4 text-center flex flex-col items-center justify-center">
-                <p className="text-xl text-red-600">Error loading reviews: {reviewsError}</p>
-                <p className="text-gray-600">Please ensure the backend is running and the hotel ID is valid.</p>
-                <button
-                    onClick={onGoBack}
-                    className="mt-4 text-gray-500 hover:text-gray-700 text-sm focus:outline-none"
-                >
-                    &larr; Go back
-                </button>
+            <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl text-center">
+                    <h2 className="text-4xl font-extrabold text-red-700 mb-4">Error</h2>
+                    <p className="text-xl text-red-600 mb-6">Failed to load reviews: {error}</p>
+                    <p className="text-gray-600">Please try again later.</p>
+                    <button
+                        onClick={onGoBack}
+                        className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300"
+                    >
+                        &larr; Go back
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-[calc(100vh-6rem)] bg-gray-100 p-4">
-            <div className="container mx-auto bg-white p-8 rounded-lg shadow-xl">
-                <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
-                    Reviews for <span className="text-indigo-600">{hotel.name}</span>
-                </h2>
+        <div className="container mx-auto p-6 min-h-[calc(100vh-6rem)]">
+            <div className="bg-white p-8 rounded-lg shadow-xl">
+                <h1 className="text-4xl font-extrabold text-gray-900 mb-6 text-center">Reviews for {hotel.name}</h1>
+                <p className="text-lg text-gray-700 mb-8 text-center">{hotel.location}</p>
 
-                {reviews.length > 0 ? (
+                {reviews.length === 0 ? (
+                    <div className="text-center p-8 bg-gray-50 rounded-lg shadow-inner">
+                        <p className="text-xl text-gray-600">No reviews yet for {hotel.name}. Be the first to add one!</p>
+                    </div>
+                ) : (
                     <div className="space-y-6">
-                        {reviews.map(review => (
-                            <div key={review._id} className="border-b border-gray-200 pb-4 last:border-b-0">
-                                <div className="flex items-center mb-2">
-                                    <p className="font-semibold text-lg text-gray-800 mr-2">{review.userName}</p>
-                                    <div className="flex">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <svg
-                                                key={star}
-                                                className={`w-5 h-5 ${
-                                                    star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
-                                                }`}
-                                                fill="currentColor"
-                                                viewBox="0 0 20 20"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.683-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.565-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
-                                            </svg>
-                                        ))}
+                        {reviews.map((review) => (
+                            <div key={review._id} className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+                                <div className="flex justify-between items-center mb-2">
+                                    <p className="text-lg font-semibold text-gray-800">
+                                        {review.userName}
+                                    </p>
+                                    <div className="text-yellow-500 font-bold text-xl">
+                                        {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                                     </div>
                                 </div>
-                                <p className="text-gray-700 mb-2">{review.comment}</p>
-                                <p className="text-gray-500 text-sm">Reviewed on: {new Date(review.createdAt).toLocaleDateString()}</p>
+                                <p className="text-gray-700 mb-3">{review.comment}</p>
+                                <p className="text-sm text-gray-500">
+                                    Reviewed on: {new Date(review.createdAt).toLocaleDateString()}
+                                </p>
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <p className="text-center text-gray-600 text-lg">No reviews yet for {hotel.name}. Be the first to review!</p>
                 )}
 
                 <div className="mt-8 text-center">
                     <button
                         onClick={onGoBack}
-                        className="mt-4 text-gray-500 hover:text-gray-700 text-sm focus:outline-none"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
-                        &larr; Go back
+                        &larr; Back to Home
                     </button>
                 </div>
             </div>
