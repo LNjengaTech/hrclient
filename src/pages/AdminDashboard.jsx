@@ -92,7 +92,6 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             setAnalyticsError(`Failed to load analytics: ${err.message}. Please ensure your backend server is running and you have admin privileges.`);
             // If fetching fails due to auth, prompt logout
             if (err.message.includes('Authentication required') || err.message.includes('Invalid or expired token') || err.message.includes('Access denied')) {
-                 // Only force logout if it's an explicit auth error, not just a network error
                  alert("Your session has expired or you do not have admin privileges. Please log in again.");
                  onLogout(); // Force logout
             }
@@ -143,12 +142,12 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
         e.preventDefault();
         setHotelMessage('');
 
-        const storedUser = localStorage.getItem('dummyUser');
-        if (!storedUser) {
+        const token = getToken(); // Get token via helper function
+
+        if (!token) {
             setHotelMessage('Authentication token missing. Please log in again.');
             return;
         }
-        const { token } = JSON.parse(storedUser);
 
         try {
             let response;
@@ -203,7 +202,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
     const handleDeleteHotel = async () => {
         setShowConfirmModal(false); // Close the modal
         setHotelMessage('');
-        const token = getToken();
+        const token = getToken(); // Get token via helper function
 
         if (!token) {
             setHotelMessage('Authentication token missing. Please log in again.');
@@ -304,8 +303,8 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
                                 <p className="text-gray-600">Total Reviews</p>
                             </div>
                             <div className="p-4 bg-blue-100 rounded-lg shadow-sm">
-                                <p className="text-3xl font-bold text-blue-700">{overallAnalytics.averageRating}</p>
-                                <p className="text-gray-600">Average Rating</p>
+                                <h3 className="text-lg font-semibold text-gray-700 mb-2">Average Rating</h3>
+                                <p className="text-4xl font-bold text-blue-600">{overallAnalytics.averageRating}</p>
                             </div>
                         </div>
                     </div>

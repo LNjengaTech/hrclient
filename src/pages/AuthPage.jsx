@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 // AuthPage component
-// It now takes API_BASE_URL as a prop to know where to send requests
 const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [email, setEmail] = useState('');
@@ -10,10 +9,10 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false); // New loading state
 
-    const handleSubmit = async (e) => { // Made handleSubmit async
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage(''); // Clear previous messages
-        setIsLoading(true); // Set loading to true
+        setMessage('');
+        setIsLoading(true);
 
         if (isLoginMode) {
             // --- REAL LOGIN API CALL ---
@@ -28,20 +27,18 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
 
                 const data = await response.json();
 
-                if (response.ok) { // Check if response status is 2xx
+                if (response.ok) {
                     setMessage('Login successful!');
-                    // *** CRITICAL LINE: Pass the entire 'data' object which contains 'token' and 'user' ***
-                    // 'data' should be { message: "...", token: "...", user: { id, username, email, isAdmin } }
-                    onLoginSuccess(data); // Pass the full data object
+                    // Pass the full data object { token, user: {...} }
+                    onLoginSuccess(data);
                 } else {
-                    // Handle errors from backend (e.g., invalid credentials)
                     setMessage(`Login failed: ${data.message || 'Server error'}`);
                 }
             } catch (error) {
                 console.error("Login API call failed:", error);
                 setMessage(`Login failed: Network error or server unreachable.`);
             } finally {
-                setIsLoading(false); // Set loading to false
+                setIsLoading(false);
             }
         } else {
             // --- REAL REGISTER API CALL ---
@@ -58,8 +55,8 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
 
                 if (response.ok) {
                     setMessage(`Registration successful for ${username}! Please log in.`);
-                    setIsLoginMode(true); // Switch to login mode after successful registration
-                    setEmail(''); // Clear form fields
+                    setIsLoginMode(true);
+                    setEmail('');
                     setPassword('');
                     setUsername('');
                 } else {
@@ -69,7 +66,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                 console.error("Register API call failed:", error);
                 setMessage(`Registration failed: Network error or server unreachable.`);
             } finally {
-                setIsLoading(false); // Set loading to false
+                setIsLoading(false);
             }
         }
     };
@@ -99,7 +96,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required={!isLoginMode}
-                                disabled={isLoading} // Disable input during loading
+                                disabled={isLoading}
                             />
                         </div>
                     )}
@@ -115,7 +112,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                disabled={isLoading} // Disable input during loading
+                                disabled={isLoading}
                             />
                     </div>
                     <div>
@@ -130,13 +127,13 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            disabled={isLoading} // Disable input during loading
+                            disabled={isLoading}
                         />
                     </div>
                     <button
                         type="submit"
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300 transform hover:scale-105"
-                        disabled={isLoading} // Disable button during loading
+                        disabled={isLoading}
                     >
                         {isLoading ? 'Loading...' : (isLoginMode ? 'Login' : 'Register')}
                     </button>
@@ -147,13 +144,13 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                         <button
                             onClick={() => {
                                 setIsLoginMode(!isLoginMode);
-                                setMessage(''); // Clear messages when switching mode
+                                setMessage('');
                                 setEmail('');
                                 setPassword('');
                                 setUsername('');
                             }}
                             className="text-blue-500 hover:text-blue-700 font-semibold focus:outline-none"
-                            disabled={isLoading} // Disable button during loading
+                            disabled={isLoading}
                         >
                             {isLoginMode ? 'Register here' : 'Login here'}
                         </button>
@@ -161,7 +158,7 @@ const AuthPage = ({ onLoginSuccess, onGoBack, API_BASE_URL }) => {
                     <button
                         onClick={onGoBack}
                         className="mt-4 text-gray-500 hover:text-gray-700 text-sm focus:outline-none"
-                        disabled={isLoading} // Disable button during loading
+                        disabled={isLoading}
                     >
                         &larr; Go back
                     </button>

@@ -20,11 +20,11 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(true); // Loading state for hotels
     const [error, setError] = useState(null); // Error state for hotels fetch
 
-    // Base URL for backend API - *** IMPORTANT: REPLACE THIS WITH YOUR RENDER BACKEND URL ***
-    const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com';
+    // Base URL for backend API - *** IMPORTANT: THIS MUST BE YOUR RENDER BACKEND URL ***
+    const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com'; // Confirmed Render Backend URL
 
-    // Function to fetch hotels from backend
-    const fetchHotels = useCallback(async () => { // Wrapped in useCallback
+    // Function to fetch hotels from backend (for HomePage)
+    const fetchHotels = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await fetch(`${API_BASE_URL}/api/hotels`);
@@ -41,29 +41,27 @@ const App = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [API_BASE_URL]); // Dependency for useCallback
+    }, [API_BASE_URL]);
 
     // Effect to fetch hotels and check login status on component mount
     useEffect(() => {
-        fetchHotels(); // Initial fetch of hotels
+        fetchHotels(); // Initial fetch of hotels for the homepage
 
         // Check login status from local storage
-        const storedUser = localStorage.getItem('dummyUser'); // This now stores token and user details
+        const storedUser = localStorage.getItem('dummyUser');
         if (storedUser) {
             try {
-                // FIX: Correctly parse the stored user data which now includes 'token' and 'user' nested
                 const parsedData = JSON.parse(storedUser);
-                const { token, user } = parsedData; // Destructure token and user from parsedData
+                const { user } = parsedData; // Destructure 'user' from parsedData
 
                 // Ensure 'user' is not null/undefined before accessing its properties
                 if (user && user.username) {
                     setIsLoggedIn(true);
-                    setUsername(user.username); // Access username from nested user object
-                    setIsAdmin(user.isAdmin || false); // Access isAdmin from nested user object
+                    setUsername(user.username);
+                    setIsAdmin(user.isAdmin || false); // Default to false if not explicitly set
                 } else {
-                    // If user data is malformed, clear it
                     console.error("Stored user data is incomplete or malformed (missing user object or username).", parsedData);
-                    localStorage.removeItem('dummyUser');
+                    localStorage.removeItem('dummyUser'); // Clear invalid data
                     setIsLoggedIn(false);
                     setUsername('');
                     setIsAdmin(false);
@@ -79,16 +77,14 @@ const App = () => {
     }, [fetchHotels]);
 
     // Function to handle login success from AuthPage
-    // FIX: Expects the full 'data' object from AuthPage, which contains 'token' and 'user'
     const handleLoginSuccess = (loginData) => {
-        // loginData is now { message: "...", token: "...", user: { id, username, email, isAdmin } }
+        // loginData is expected to be { message: "...", token: "...", user: { id, username, email, isAdmin } }
         localStorage.setItem('dummyUser', JSON.stringify(loginData)); // Store the entire object
 
-        // Ensure loginData.user exists before accessing properties
         if (loginData && loginData.user) {
             setIsLoggedIn(true);
-            setUsername(loginData.user.username); // Access username from nested user object
-            setIsAdmin(loginData.user.isAdmin);   // Access isAdmin from nested user object
+            setUsername(loginData.user.username);
+            setIsAdmin(loginData.user.isAdmin);
             setCurrentPage('home'); // Redirect to home after login
             console.log("User logged in (real backend auth).");
         } else {
@@ -102,7 +98,7 @@ const App = () => {
 
     // Function to handle logout
     const handleLogout = () => {
-        localStorage.removeItem('dummyUser'); // Clear user data and token
+        localStorage.removeItem('dummyUser');
         setIsLoggedIn(false);
         setUsername('');
         setIsAdmin(false);
@@ -110,7 +106,7 @@ const App = () => {
         console.log("User logged out.");
     };
 
-    // Function to handle redirection for username click
+    // Function to handle redirection for username click (e.g., to Admin Dashboard or User Account)
     const handleUserClick = () => {
         if (isAdmin) {
             setCurrentPage('admin-dashboard');
@@ -132,9 +128,7 @@ const App = () => {
 
     // Function to navigate to ReviewForm page
     const handleNavigateToReviewForm = (hotelId) => {
-        // Find the hotel object first to ensure it exists
         const hotelToReview = hotels.find(h => h._id === hotelId);
-
         if (!hotelToReview) {
             alert('Error: Hotel not found for review. Please try again.');
             console.error('Attempted to navigate to review form for non-existent hotelId:', hotelId);
@@ -143,7 +137,7 @@ const App = () => {
 
         if (!isLoggedIn) {
             alert('Please log in to write a review.');
-            setCurrentPage('auth'); // Redirect to login if not logged in
+            setCurrentPage('auth');
             return;
         }
         setSelectedHotelId(hotelId);
@@ -152,9 +146,7 @@ const App = () => {
 
     // Function to navigate to HotelReviews page
     const handleNavigateToHotelReviews = (hotelId) => {
-        // Find the hotel object first to ensure it exists
         const hotelToViewReviews = hotels.find(h => h._id === hotelId);
-
         if (!hotelToViewReviews) {
             alert('Error: Hotel not found to view reviews. Please try again.');
             console.error('Attempted to navigate to view reviews for non-existent hotelId:', hotelId);
@@ -164,7 +156,7 @@ const App = () => {
         setCurrentPage('hotel-reviews');
     };
 
-    // Function to handle review submission (now sends to backend)
+    // Function to handle review submission (sends to backend)
     const handleSubmitReview = async (reviewData) => {
         const storedUser = localStorage.getItem('dummyUser');
         if (!storedUser) {
@@ -192,7 +184,7 @@ const App = () => {
 
             console.log("Review submitted successfully:", data.review);
             alert("Review submitted successfully! Thank you for your feedback.");
-            setCurrentPage('home'); // Go back to home after review submission
+            setCurrentPage('home');
             return true;
         } catch (err) {
             console.error("Error submitting review:", err);
@@ -201,19 +193,18 @@ const App = () => {
         }
     };
 
-    // Callback to trigger a refresh of hotels list in App.jsx
+    // Callback to trigger a refresh of hotels list in App.jsx (e.g., after admin adds/edits a hotel)
     const handleHotelsUpdated = () => {
-        // This will trigger a re-fetch of hotels
         fetchHotels();
     };
 
-    // Dummy search functionality (for now, just logs the search term)
+    // Dummy search functionality
     const handleSearch = (term) => {
         console.log("Search term from Navbar:", term);
     };
 
     // Find the currently selected hotel object
-    const currentHotel = selectedHotelId ? hotels.find(h => h._id === selectedHotelId) : null; // Use _id for lookup
+    const currentHotel = selectedHotelId ? hotels.find(h => h._id === selectedHotelId) : null;
 
     // Render the current page based on currentPage state
     const renderPage = () => {
@@ -236,17 +227,15 @@ const App = () => {
                         username={username}
                         onLogout={handleLogout}
                         onGoBack={handleGoBack}
-                        onHotelsUpdated={handleHotelsUpdated} // Pass the refresh callback
+                        onHotelsUpdated={handleHotelsUpdated}
                         API_BASE_URL={API_BASE_URL} // Pass API_BASE_URL to AdminDashboard
                     />
                 );
             case 'user-account':
                 return <UserAccount username={username} onLogout={handleLogout} onGoBack={handleGoBack} />;
             case 'review-form':
-                // Pass currentHotel and the actual submission handler
                 return <ReviewForm hotel={currentHotel} onGoBack={handleGoBack} onSubmitReview={handleSubmitReview} />;
             case 'hotel-reviews':
-                // Pass currentHotel to HotelReviews so it can fetch its reviews
                 return <HotelReviews hotel={currentHotel} onGoBack={handleGoBack} />;
             default:
                 return (
