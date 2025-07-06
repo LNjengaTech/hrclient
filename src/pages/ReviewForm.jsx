@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
 const ReviewForm = ({ hotel, onGoBack, onSubmitReview }) => {
-    const [rating, setRating] = useState(0);
+    const [rating, setRating] = useState(0); // State for the selected rating (number 1-5)
+    const [hoverRating, setHoverRating] = useState(0); // State for visual hover effect
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -31,6 +32,13 @@ const ReviewForm = ({ hotel, onGoBack, onSubmitReview }) => {
         setMessage('');
         setIsSubmitting(true);
 
+        // Validate rating is selected
+        if (rating === 0) {
+            setMessage('Please select a star rating.');
+            setIsSubmitting(false);
+            return;
+        }
+
         const reviewData = {
             hotel: hotel._id, // Send hotel ID
             rating: parseInt(rating), // Ensure rating is an integer
@@ -57,26 +65,32 @@ const ReviewForm = ({ hotel, onGoBack, onSubmitReview }) => {
                     Review: {hotel.name}
                 </h2>
                 {message && (
-                    <div className={`p-3 mb-4 rounded-md text-center ${message.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    <div className={`p-3 mb-4 rounded-md text-center ${message.includes('Failed') || message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                         {message}
                     </div>
                 )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="rating">
-                            Rating (1-5 Stars)
+                            Your Rating
                         </label>
-                        <input
-                            type="number"
-                            id="rating"
-                            min="1"
-                            max="5"
-                            className="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500"
-                            value={rating}
-                            onChange={(e) => setRating(e.target.value)}
-                            required
-                            disabled={isSubmitting}
-                        />
+                        <div className="flex justify-center space-x-1 mb-4"
+                             onMouseLeave={() => setHoverRating(0)}>
+                            {[1, 2, 3, 4, 5].map((starValue) => (
+                                <svg
+                                    key={starValue}
+                                    className={`h-10 w-10 cursor-pointer transition-colors duration-200
+                                                ${(hoverRating || rating) >= starValue ? 'text-yellow-500' : 'text-gray-300'}`}
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    onClick={() => setRating(starValue)}
+                                    onMouseEnter={() => setHoverRating(starValue)}
+                                >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.929 8.73c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                                </svg>
+                            ))}
+                        </div>
                     </div>
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="comment">
