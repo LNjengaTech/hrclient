@@ -1,5 +1,5 @@
 import React from 'react';
-import HotelCard from '../components/HotelCard.jsx'; // Ensure this path is correct for your setup
+import HotelCard from '../Components/HotelCard.jsx'; // Ensure this path is correct for your setup
 
 // HomePage now accepts navigation functions and loading/error states as props
 // It no longer manages its own search term, relying on the 'hotels' prop (which is 'displayedHotels' from App.jsx)
