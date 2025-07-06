@@ -7,14 +7,49 @@ import UserAccount from './pages/UserAccount.jsx';
 import ReviewForm from './pages/ReviewForm.jsx';
 import HotelReviews from './pages/HotelReviews.jsx';
 
+// Helper to map URL paths to internal page names
+const mapPathToPage = (pathname) => {
+    if (pathname.startsWith('/review-form/')) return 'review-form';
+    if (pathname.startsWith('/hotel-reviews/')) return 'hotel-reviews';
+    switch (pathname) {
+        case '/': return 'home';
+        case '/auth': return 'auth';
+        case '/admin-dashboard': return 'admin-dashboard';
+        case '/user-account': return 'user-account';
+        default: return 'home';
+    }
+};
+
+// Helper to map internal page names to URL paths
+const mapPageToPath = (page, hotelId = null) => {
+    switch (page) {
+        case 'home': return '/';
+        case 'auth': return '/auth';
+        case 'admin-dashboard': return '/admin-dashboard';
+        case 'user-account': return '/user-account';
+        case 'review-form': return hotelId ? `/review-form/${hotelId}` : '/review-form';
+        case 'hotel-reviews': return hotelId ? `/hotel-reviews/${hotelId}` : '/hotel-reviews';
+        default: return '/';
+    }
+};
+
 // Main App component
 const App = () => {
     // State to manage user login status and user information
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [username, setUsername] = useState('');
     const [isAdmin, setIsAdmin] = useState(false); // To distinguish admin for redirection
-    const [currentPage, setCurrentPage] = useState('home'); // State for simple routing
-    const [selectedHotelId, setSelectedHotelId] = useState(null); // State to store selected hotel ID
+
+    // Initialize currentPage based on current URL path
+    const [currentPage, setCurrentPage] = useState(mapPathToPage(window.location.pathname));
+    const [selectedHotelId, setSelectedHotelId] = useState(() => {
+        // Extract hotelId from URL on initial load if applicable
+        const pathname = window.location.pathname;
+        if (pathname.startsWith('/review-form/') || pathname.startsWith('/hotel-reviews/')) {
+            return pathname.split('/').pop();
+        }
+        return null;
+    });
 
     const [hotels, setHotels] = useState([]); // Stores ALL hotels fetched from backend
     const [displayedHotels, setDisplayedHotels] = useState([]); // Stores hotels currently displayed (filtered or all)
@@ -42,6 +77,37 @@ const App = () => {
         }, 3000);
 
         return () => clearTimeout(timer); // Cleanup timer if component unmounts or toast changes
+    }, []);
+
+    // Effect to sync URL with currentPage state
+    useEffect(() => {
+        const newPath = mapPageToPath(currentPage, selectedHotelId);
+        if (window.location.pathname !== newPath) {
+            window.history.pushState({ page: currentPage, hotelId: selectedHotelId }, '', newPath);
+        }
+    }, [currentPage, selectedHotelId]);
+
+    // Effect to handle browser back/forward buttons
+    useEffect(() => {
+        const handlePopState = (event) => {
+            const state = event.state;
+            if (state && state.page) {
+                setCurrentPage(state.page);
+                setSelectedHotelId(state.hotelId || null);
+            } else {
+                // Fallback for initial load or if state is null (e.g., direct URL access)
+                setCurrentPage(mapPathToPage(window.location.pathname));
+                const pathname = window.location.pathname;
+                if (pathname.startsWith('/review-form/') || pathname.startsWith('/hotel-reviews/')) {
+                    setSelectedHotelId(pathname.split('/').pop());
+                } else {
+                    setSelectedHotelId(null);
+                }
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
 
@@ -146,12 +212,10 @@ const App = () => {
         setCurrentPage('auth');
     };
 
-    // Function to navigate back to home
+    // Function to navigate back in browser history
     const handleGoBack = () => {
-        setCurrentPage('home');
-        setSelectedHotelId(null); // Clear selected hotel when going back to home
-        // When going back to home, reset displayed hotels to all hotels
-        setDisplayedHotels(hotels);
+        window.history.back(); // Use browser's back button
+        setSelectedHotelId(null); // Clear selected hotel when going back to home or previous page
     };
 
     // Function to navigate to ReviewForm page
@@ -260,6 +324,13 @@ const App = () => {
 
     // Render the current page based on currentPage state
     const renderPage = () => {
+        // Extract hotelId from URL for HotelReviews and ReviewForm if not already in state
+        const path = window.location.pathname;
+        let currentHotelIdFromPath = null;
+        if (path.startsWith('/review-form/') || path.startsWith('/hotel-reviews/')) {
+            currentHotelIdFromPath = path.split('/').pop();
+        }
+
         switch (currentPage) {
             case 'home':
                 return (
@@ -286,9 +357,11 @@ const App = () => {
             case 'user-account':
                 return <UserAccount username={username} onLogout={handleLogout} onGoBack={handleGoBack} />;
             case 'review-form':
-                return <ReviewForm hotel={currentHotel} onGoBack={handleGoBack} onSubmitReview={handleSubmitReview} />;
+                // Ensure hotel prop is correctly passed, preferring selectedHotelId state
+                return <ReviewForm hotel={currentHotel || hotels.find(h => h._id === currentHotelIdFromPath)} onGoBack={handleGoBack} onSubmitReview={handleSubmitReview} />;
             case 'hotel-reviews':
-                return <HotelReviews hotel={currentHotel} onGoBack={handleGoBack} />;
+                // Ensure hotel prop is correctly passed, preferring selectedHotelId state
+                return <HotelReviews hotel={currentHotel || hotels.find(h => h._id === currentHotelIdFromPath)} onGoBack={handleGoBack} />;
             default:
                 return (
                     <HomePage
