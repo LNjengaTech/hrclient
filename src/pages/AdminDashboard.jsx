@@ -30,65 +30,95 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
         if (storedUser) {
             try {
                 const parsedData = JSON.parse(storedUser);
-                return parsedData.token;
+                console.log("getToken: Parsed data from localStorage:", parsedData); // Log parsed data
+                if (parsedData.token) {
+                    console.log("getToken: Token found and returning.");
+                    return parsedData.token;
+                } else {
+                    console.warn("getToken: 'token' property not found in localStorage data. Stored data:", parsedData);
+                    return null;
+                }
             } catch (e) {
-                console.error("Failed to parse token from localStorage:", e);
+                console.error("getToken: Failed to parse token from localStorage:", e);
                 return null;
             }
         }
+        console.log("getToken: No 'dummyUser' found in localStorage.");
         return null;
     };
 
     // --- Fetch Analytics and Hotels ---
     const fetchAdminData = useCallback(async () => {
+        console.log("fetchAdminData: Starting fetch for admin data...");
         setIsLoadingAnalytics(true);
         setAnalyticsError(null);
 
         const token = getToken();
+        console.log("fetchAdminData: Token retrieved:", token ? "Exists (length: " + token.length + ")" : "Does NOT exist"); // Log token presence and length
 
         if (!token) {
             setAnalyticsError('Authentication required. Please log in as an admin.');
             setIsLoadingAnalytics(false);
-            // Do not call onLogout here immediately, let the error message guide the user
+            console.error("fetchAdminData: No token found, stopping fetch.");
             return;
         }
 
         try {
             // Fetch Overall Analytics
+            console.log(`fetchAdminData: Fetching overall analytics from ${API_BASE_URL}/api/analytics/overall`);
             const overallRes = await fetch(`${API_BASE_URL}/api/analytics/overall`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log("fetchAdminData: Overall analytics response status:", overallRes.status);
             const overallData = await overallRes.json();
-            if (!overallRes.ok) throw new Error(overallData.message || 'Failed to fetch overall analytics');
+            if (!overallRes.ok) {
+                console.error("fetchAdminData: Overall analytics fetch failed with data:", overallData);
+                throw new Error(overallData.message || 'Failed to fetch overall analytics');
+            }
             setOverallAnalytics(overallData);
 
             // Fetch Reviews Per Hotel
+            console.log(`fetchAdminData: Fetching reviews per hotel from ${API_BASE_URL}/api/analytics/reviews-per-hotel`);
             const rphRes = await fetch(`${API_BASE_URL}/api/analytics/reviews-per-hotel`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log("fetchAdminData: Reviews per hotel response status:", rphRes.status);
             const rphData = await rphRes.json();
-            if (!rphRes.ok) throw new Error(rphData.message || 'Failed to fetch reviews per hotel');
+            if (!rphRes.ok) {
+                console.error("fetchAdminData: Reviews per hotel fetch failed with data:", rphData);
+                throw new Error(rphData.message || 'Failed to fetch reviews per hotel');
+            }
             setReviewsPerHotel(rphData);
 
             // Fetch Recent Reviews
+            console.log(`fetchAdminData: Fetching recent reviews from ${API_BASE_URL}/api/analytics/recent-reviews`);
             const rrRes = await fetch(`${API_BASE_URL}/api/analytics/recent-reviews`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log("fetchAdminData: Recent reviews response status:", rrRes.status);
             const rrData = await rrRes.json();
-            if (!rrRes.ok) throw new Error(rrData.message || 'Failed to fetch recent reviews');
+            if (!rrRes.ok) {
+                console.error("fetchAdminData: Recent reviews fetch failed with data:", rrData);
+                throw new Error(rrData.message || 'Failed to fetch recent reviews');
+            }
             setRecentReviews(rrData);
 
             // Fetch all hotels for management
+            console.log(`fetchAdminData: Fetching hotels for management from ${API_BASE_URL}/api/hotels`);
             const hotelsRes = await fetch(`${API_BASE_URL}/api/hotels`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log("fetchAdminData: Hotels for management response status:", hotelsRes.status);
             const hotelsData = await hotelsRes.json();
-            if (!hotelsRes.ok) throw new Error(hotelsData.message || 'Failed to fetch hotels for management');
+            if (!hotelsRes.ok) {
+                console.error("fetchAdminData: Hotels for management fetch failed with data:", hotelsData);
+                throw new Error(hotelsData.message || 'Failed to fetch hotels for management');
+            }
             setHotels(hotelsData);
 
 
         } catch (err) {
-            console.error('Error fetching admin data:', err);
+            console.error('fetchAdminData: Error during fetch:', err);
             setAnalyticsError(`Failed to load analytics: ${err.message}. Please ensure your backend server is running and you have admin privileges.`);
             // If fetching fails due to auth, prompt logout
             if (err.message.includes('Authentication required') || err.message.includes('Invalid or expired token') || err.message.includes('Access denied')) {
@@ -97,17 +127,20 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             }
         } finally {
             setIsLoadingAnalytics(false);
+            console.log("fetchAdminData: Fetch process completed.");
         }
     }, [API_BASE_URL, onLogout]); // Added API_BASE_URL to dependencies, removed onGoBack from here to prevent immediate redirect on error
 
     useEffect(() => {
+        console.log("AdminDashboard useEffect: Calling fetchAdminData.");
         fetchAdminData();
     }, [fetchAdminData]);
 
 
-    // --- Hotel Management Handlers ---
+    // --- Hotel Management Handlers (unchanged, but adding console logs for consistency) ---
 
     const openAddHotelModal = () => {
+        console.log("openAddHotelModal: Opening add hotel modal.");
         setCurrentHotel(null);
         setHotelForm({ name: '', location: '', description: '', imageUrl: '' });
         setHotelMessage('');
@@ -115,6 +148,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
     };
 
     const openEditHotelModal = (hotel) => {
+        console.log("openEditHotelModal: Opening edit hotel modal for:", hotel.name);
         setCurrentHotel(hotel);
         setHotelForm({
             name: hotel.name,
@@ -127,6 +161,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
     };
 
     const closeHotelModal = () => {
+        console.log("closeHotelModal: Closing hotel modal.");
         setIsHotelModalOpen(false);
         setCurrentHotel(null);
         setHotelForm({ name: '', location: '', description: '', imageUrl: '' });
@@ -136,16 +171,20 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
     const handleHotelFormChange = (e) => {
         const { name, value } = e.target;
         setHotelForm(prev => ({ ...prev, [name]: value }));
+        console.log(`handleHotelFormChange: ${name} changed to ${value}`);
     };
 
     const handleSubmitHotel = async (e) => {
         e.preventDefault();
         setHotelMessage('');
+        console.log("handleSubmitHotel: Submitting hotel form.");
 
         const token = getToken(); // Get token via helper function
+        console.log("handleSubmitHotel: Token retrieved:", token ? "Exists" : "Does NOT exist");
 
         if (!token) {
             setHotelMessage('Authentication token missing. Please log in again.');
+            console.error("handleSubmitHotel: No token found, stopping submission.");
             return;
         }
 
@@ -157,9 +196,11 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             if (currentHotel) { // Editing existing hotel
                 method = 'PUT';
                 url = `${API_BASE_URL}/api/hotels/${currentHotel._id}`;
+                console.log(`handleSubmitHotel: Editing hotel at ${url}`);
             } else { // Adding new hotel
                 method = 'POST';
                 url = `${API_BASE_URL}/api/hotels`;
+                console.log(`handleSubmitHotel: Adding new hotel at ${url}`);
             }
 
             response = await fetch(url, {
@@ -172,6 +213,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             });
 
             const data = await response.json();
+            console.log("handleSubmitHotel: Response status:", response.status, "Data:", data);
 
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to perform operation');
@@ -181,9 +223,10 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             onHotelsUpdated(); // Notify App.jsx to refresh hotel list
             await fetchAdminData(); // Re-fetch all admin data including updated hotel list
             closeHotelModal();
+            console.log("handleSubmitHotel: Hotel operation successful.");
 
         } catch (err) {
-            console.error('Hotel operation error:', err);
+            console.error('handleSubmitHotel: Hotel operation error:', err);
             setHotelMessage(`Error: ${err.message}`);
             if (err.message.includes('Authentication required') || err.message.includes('Invalid or expired token') || err.message.includes('Access denied')) {
                  alert("Your session has expired or you do not have admin privileges. Please log in again.");
@@ -194,6 +237,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
 
     // Function to open the custom confirmation modal
     const confirmDeleteHotel = (hotelId) => {
+        console.log("confirmDeleteHotel: Confirming deletion for hotel ID:", hotelId);
         setHotelToDelete(hotelId);
         setShowConfirmModal(true);
     };
@@ -202,10 +246,13 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
     const handleDeleteHotel = async () => {
         setShowConfirmModal(false); // Close the modal
         setHotelMessage('');
+        console.log("handleDeleteHotel: Deleting hotel with ID:", hotelToDelete);
         const token = getToken(); // Get token via helper function
+        console.log("handleDeleteHotel: Token retrieved:", token ? "Exists" : "Does NOT exist");
 
         if (!token) {
             setHotelMessage('Authentication token missing. Please log in again.');
+            console.error("handleDeleteHotel: No token found, stopping deletion.");
             return;
         }
 
@@ -218,6 +265,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             });
 
             const data = await response.json();
+            console.log("handleDeleteHotel: Response status:", response.status, "Data:", data);
 
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to delete hotel');
@@ -228,7 +276,7 @@ const AdminDashboard = ({ username, onLogout, onGoBack, onHotelsUpdated, API_BAS
             await fetchAdminData(); // Re-fetch all admin data
 
         } catch (err) {
-            console.error('Hotel deletion error:', err);
+            console.error('handleDeleteHotel: Hotel deletion error:', err);
             setHotelMessage(`Error: ${err.message}`);
             if (err.message.includes('Authentication required') || err.message.includes('Invalid or expired token') || err.message.includes('Access denied')) {
                  alert("Your session has expired or you do not have admin privileges. Please log in again.");
