@@ -20,8 +20,30 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(true); // Loading state for hotels
     const [error, setError] = useState(null); // Error state for hotels fetch
 
+    // State for Toast Notifications
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState('success'); // 'success' or 'error'
+
     // Base URL for backend API - *** IMPORTANT: THIS MUST BE YOUR RENDER BACKEND URL ***
     const API_BASE_URL = 'https://hrbackend-6tqe.onrender.com'; // Confirmed Render Backend URL
+
+    // Function to display a toast message
+    const displayToast = useCallback((message, type) => {
+        setToastMessage(message);
+        setToastType(type);
+        setShowToast(true);
+
+        // Automatically hide toast after 3 seconds
+        const timer = setTimeout(() => {
+            setShowToast(false);
+            setToastMessage('');
+            setToastType('success'); // Reset to default
+        }, 3000);
+
+        return () => clearTimeout(timer); // Cleanup timer if component unmounts or toast changes
+    }, []);
+
 
     // Function to fetch hotels from backend (for HomePage)
     const fetchHotels = useCallback(async () => {
@@ -87,9 +109,10 @@ const App = () => {
             setIsAdmin(loginData.user.isAdmin);
             setCurrentPage('home'); // Redirect to home after login
             console.log("User logged in (real backend auth).");
+            displayToast('Logged in successfully!', 'success'); // Toast for login success
         } else {
             console.error("Login data from AuthPage is missing 'user' object:", loginData);
-            alert("Login failed due to incomplete user data. Please try again.");
+            displayToast("Login failed due to incomplete user data. Please try again.", 'error'); // Toast for login error
             setIsLoggedIn(false);
             setUsername('');
             setIsAdmin(false);
@@ -104,6 +127,7 @@ const App = () => {
         setIsAdmin(false);
         setCurrentPage('home'); // Redirect to home after logout
         console.log("User logged out.");
+        displayToast('Logged out successfully!', 'success'); // Toast for logout
     };
 
     // Function to handle redirection for username click (e.g., to Admin Dashboard or User Account)
@@ -130,13 +154,13 @@ const App = () => {
     const handleNavigateToReviewForm = (hotelId) => {
         const hotelToReview = hotels.find(h => h._id === hotelId);
         if (!hotelToReview) {
-            alert('Error: Hotel not found for review. Please try again.');
+            displayToast('Error: Hotel not found for review. Please try again.', 'error'); // Toast for hotel not found
             console.error('Attempted to navigate to review form for non-existent hotelId:', hotelId);
             return;
         }
 
         if (!isLoggedIn) {
-            alert('Please log in to write a review.');
+            displayToast('Please log in to write a review.', 'error'); // Toast for not logged in
             setCurrentPage('auth');
             return;
         }
@@ -148,7 +172,7 @@ const App = () => {
     const handleNavigateToHotelReviews = (hotelId) => {
         const hotelToViewReviews = hotels.find(h => h._id === hotelId);
         if (!hotelToViewReviews) {
-            alert('Error: Hotel not found to view reviews. Please try again.');
+            displayToast('Error: Hotel not found to view reviews. Please try again.', 'error'); // Toast for hotel not found
             console.error('Attempted to navigate to view reviews for non-existent hotelId:', hotelId);
             return;
         }
@@ -163,7 +187,7 @@ const App = () => {
         const storedUser = localStorage.getItem('dummyUser');
         if (!storedUser) {
             console.error("App.jsx: No user data found for review submission.");
-            alert("You must be logged in to submit a review.");
+            displayToast("You must be logged in to submit a review.", 'error'); // Toast for not logged in
             return false;
         }
         const { token, user } = JSON.parse(storedUser);
@@ -191,7 +215,7 @@ const App = () => {
                 }
 
                 console.log("Review submitted successfully:", data.review);
-                alert("Review submitted successfully! Thank you for your feedback.");
+                displayToast("Review submitted successfully! Thank you for your feedback.", 'success'); // Toast for success
                 setCurrentPage('home');
                 return true;
             } else {
@@ -201,7 +225,7 @@ const App = () => {
             }
         } catch (err) {
             console.error("App.jsx: Error submitting review:", err);
-            alert(`Error submitting review: ${err.message}. Please try again.`);
+            displayToast(`Error submitting review: ${err.message}. Please try again.`, 'error'); // Toast for error
             return false;
         }
     };
@@ -303,6 +327,15 @@ const App = () => {
             />
 
             {renderPage()}
+
+            {/* Toast Notification */}
+            {showToast && (
+                <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transition-transform transform ${
+                    toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
+                } translate-y-0 opacity-100`}>
+                    {toastMessage}
+                </div>
+            )}
         </div>
     );
 };
