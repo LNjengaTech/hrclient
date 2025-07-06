@@ -16,7 +16,8 @@ const App = () => {
     const [currentPage, setCurrentPage] = useState('home'); // State for simple routing
     const [selectedHotelId, setSelectedHotelId] = useState(null); // State to store selected hotel ID
 
-    const [hotels, setHotels] = useState([]); // Initialize as empty array, data will be fetched
+    const [hotels, setHotels] = useState([]); // Stores ALL hotels fetched from backend
+    const [displayedHotels, setDisplayedHotels] = useState([]); // Stores hotels currently displayed (filtered or all)
     const [isLoading, setIsLoading] = useState(true); // Loading state for hotels
     const [error, setError] = useState(null); // Error state for hotels fetch
 
@@ -53,12 +54,14 @@ const App = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            setHotels(data);
+            setHotels(data); // Store all fetched hotels
+            setDisplayedHotels(data); // Initially display all hotels
             setError(null); // Clear any previous errors
         } catch (err) {
             console.error("Failed to fetch hotels:", err);
             setError(err.message);
             setHotels([]); // Ensure hotels is an empty array on error
+            setDisplayedHotels([]); // Ensure displayedHotels is empty on error
         } finally {
             setIsLoading(false);
         }
@@ -147,6 +150,8 @@ const App = () => {
     const handleGoBack = () => {
         setCurrentPage('home');
         setSelectedHotelId(null); // Clear selected hotel when going back to home
+        // When going back to home, reset displayed hotels to all hotels
+        setDisplayedHotels(hotels);
     };
 
     // Function to navigate to ReviewForm page
@@ -231,12 +236,23 @@ const App = () => {
 
     // Callback to trigger a refresh of hotels list in App.jsx (e.g., after admin adds/edits a hotel)
     const handleHotelsUpdated = () => {
-        fetchHotels();
+        fetchHotels(); // Re-fetch all hotels to update the list, which will also update displayedHotels
     };
 
-    // Dummy search functionality
+    // Search functionality
     const handleSearch = (term) => {
-        console.log("Search term from Navbar:", term);
+        console.log("App.jsx: Search term from Navbar:", term);
+        if (term) {
+            const lowercasedTerm = term.toLowerCase();
+            const filtered = hotels.filter(hotel =>
+                hotel.name.toLowerCase().includes(lowercasedTerm) ||
+                hotel.location.toLowerCase().includes(lowercasedTerm) ||
+                (hotel.description && hotel.description.toLowerCase().includes(lowercasedTerm))
+            );
+            setDisplayedHotels(filtered);
+        } else {
+            setDisplayedHotels(hotels); // If search term is empty, show all hotels
+        }
     };
 
     // Find the currently selected hotel object
@@ -248,7 +264,7 @@ const App = () => {
             case 'home':
                 return (
                     <HomePage
-                        hotels={hotels}
+                        hotels={displayedHotels} // Pass displayedHotels to HomePage
                         onReviewClick={handleNavigateToReviewForm}
                         onViewReviewsClick={handleNavigateToHotelReviews}
                         isLoading={isLoading}
@@ -276,7 +292,7 @@ const App = () => {
             default:
                 return (
                     <HomePage
-                        hotels={hotels}
+                        hotels={displayedHotels} // Pass displayedHotels to HomePage
                         onReviewClick={handleNavigateToReviewForm}
                         onViewReviewsClick={handleNavigateToHotelReviews}
                         isLoading={isLoading}
